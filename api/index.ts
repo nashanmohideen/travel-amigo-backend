@@ -5,8 +5,7 @@ import { ConfigService } from "@nestjs/config";
 import { AppModule } from "../src/app.module";
 import { ApiErrorFilter } from "../src/common/filters/api-error.filter";
 import serverlessExpress from "@vendia/serverless-express";
-import * as express from "express";
-import type { Request, Response } from "express";
+import express, { type Request, type Response } from "express";
 
 const expressServer = express();
 let handler: ReturnType<typeof serverlessExpress>;

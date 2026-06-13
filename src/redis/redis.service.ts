@@ -16,10 +16,12 @@ export class RedisService implements OnModuleDestroy {
   readonly client: Redis;
 
   constructor(config: ConfigService) {
-    this.client = new Redis(config.get<string>("REDIS_URL") ?? "redis://localhost:6379", {
+    const redisUrl = config.get<string>("REDIS_URL") ?? "redis://localhost:6379";
+    const isTls = redisUrl.startsWith("rediss://");
+    this.client = new Redis(redisUrl, {
       maxRetriesPerRequest: 2,
       lazyConnect: true,
-      // Don't crash the app when Redis is unreachable in local dev
+      ...(isTls ? { tls: {} } : {}),
       retryStrategy: (times) => Math.min(times * 500, 5000),
     });
     this.client.on("error", () => {

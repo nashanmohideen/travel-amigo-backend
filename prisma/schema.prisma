@@ -1,0 +1,160 @@
+// Travel Amigo — Prisma schema
+//
+// Field names follow the frontend type contracts in travel-amigo/types/index.ts
+// (Phase 0 contract summary). Plain lat/lng Float columns — no PostGIS/pgvector.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum TripStatus {
+  draft
+  active
+  archived
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  role          Role     @default(user)
+  emailVerified Boolean  @default(false)
+  /// bcrypt hash of the current refresh token (rotated on every refresh)
+  refreshToken  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  trips    Trip[]
+  feedback Feedback[]
+}
+
+model Trip {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  startDate DateTime?
+  endDate   DateTime?
+  /// Total stated budget in LKR (TripInput.budgetLKR)
+  budget    Int
+  status    TripStatus @default(active)
+  /// Exact GeneratedItinerary as rendered by the frontend — written on every save
+  itinerarySnapshot Json
+  /// URL of the generated PDF export in R2 (set by the pdf-queue worker)
+  pdfUrl    String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  days        ItineraryDay[]
+  shareTokens ShareToken[]
+  feedback    Feedback[]
+
+  @@index([userId])
+}
+
+model ItineraryDay {
+  id        String    @id @default(uuid())
+  tripId    String
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  dayNumber Int
+  date      DateTime?
+  /// Discovered in Phase 0: GeneratedItineraryDay fields
+  title         String @default("")
+  location      String @default("")
+  transportNote String @default("")
+  totalCostLkr  Int    @default(0)
+
+  items ItineraryItem[]
+}
+
+model ItineraryItem {
+  id      String       @id @default(uuid())
+  dayId   String
+  day     ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  placeId String
+  place   Place        @relation(fields: [placeId], references: [id])
+  order   Int
+  /// Visit duration in minutes (Place.estimatedVisitDurationMinutes at save time)
+  duration      Int
+  notes         String  @default("")
+  transportMode String  @default("mixed")
+  /// Estimated cost in LKR for all travellers (ItineraryItem.estimatedCostLkr)
+  estimatedCost Int     @default(0)
+  /// Discovered in Phase 0: time-slot labels rendered by the frontend
+  startTime String @default("")
+  endTime   String @default("")
+}
+
+model Place {
+  id     String @id
+  name   String
+  /// Destination region ("coast" | "cultural" | "hill-country" | "wildlife")
+  region String
+  /// PlaceCategory from the frontend ("nature", "culture", "food", ...)
+  type   String
+  lat    Float
+  lng    Float
+  googlePlaceId String?
+  description   String
+  openingHours  Json?
+  rating        Float?
+  createdAt     DateTime @default(now())
+
+  // ── Fields discovered in Phase 0 (data/places.ts shape) ──
+  /// Destination id ("ella" | "kandy" | "galle" | "nuwara-eliya" | "colombo")
+  destination                   String
+  tags                          String[]
+  estimatedVisitDurationMinutes Int      @default(60)
+  /// Entry cost in LKR per person; 0 = free
+  estimatedCostLkr              Int      @default(0)
+  bestTimeToVisit               String   @default("")
+  travelTip                     String   @default("")
+  /// Tailwind gradient classes used by the frontend as an image placeholder
+  gradientPlaceholder           String   @default("")
+  /// TravelStyle tiers this place suits ("budget" | "balanced" | "premium")
+  suitableFor                   String[]
+  /// PlaceInterest tags ("nature", "photography", ...)
+  interests                     String[]
+
+  itineraryItems ItineraryItem[]
+}
+
+model ShareToken {
+  id        String    @id @default(uuid())
+  tripId    String
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  token     String
+  expiresAt DateTime?
+  viewCount Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  @@unique([token])
+}
+
+model Feedback {
+  id     String  @id @default(uuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tripId String?
+  trip   Trip?   @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  /// Feedback channel/type (FeedbackSubmission.source, e.g. "itinerary_page")
+  type    String
+  /// Free-text feedback (FeedbackSubmission.missingOrUnrealistic)
+  content String  @default("")
+  /// Usefulness rating 1–5 (FeedbackSubmission.usefulnessRating)
+  rating  Int
+  /// Full FeedbackSubmission payload discovered in Phase 0 (wouldUse,
+  /// budgetRealism, wantedNext, trip context snapshot, ...)
+  payload Json?
+  createdAt DateTime @default(now())
+}

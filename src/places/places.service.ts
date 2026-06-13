@@ -20,6 +20,16 @@ export class PlacesService {
     private readonly google: GoogleApiService
   ) {}
 
+  /** Distinct destination strings ordered alphabetically (1h Redis TTL on caller). */
+  async listDestinations(): Promise<string[]> {
+    const rows = await this.prisma.place.findMany({
+      select: { destination: true },
+      distinct: ["destination"],
+      orderBy: { destination: "asc" },
+    });
+    return rows.map((r) => r.destination);
+  }
+
   /** Filterable list, returned in the FE Place shape. */
   async list(query: ListPlacesQueryDto): Promise<GenPlace[]> {
     const where: Prisma.PlaceWhereInput = {};

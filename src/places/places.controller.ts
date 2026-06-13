@@ -12,6 +12,12 @@ import { OptionalJwtGuard } from "../auth/guards/optional-jwt.guard";
 export class PlacesController {
   constructor(private readonly places: PlacesService) {}
 
+  /** GET /api/v1/places/destinations — distinct destination strings from DB. */
+  @Get("destinations")
+  listDestinations() {
+    return this.places.listDestinations();
+  }
+
   /** GET /api/v1/places?destination=ella&category=nature&interests=nature,photography */
   @Get()
   list(@Query() query: ListPlacesQueryDto) {

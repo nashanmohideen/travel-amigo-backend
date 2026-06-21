@@ -4,13 +4,21 @@ import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { AppModule } from "../src/app.module";
 import { ApiErrorFilter } from "../src/common/filters/api-error.filter";
-import serverlessExpress from "@vendia/serverless-express";
 import express, { type Request, type Response } from "express";
 
 const expressServer = express();
-let handler: ReturnType<typeof serverlessExpress>;
 
-async function bootstrap() {
+/**
+ * Bootstrap NestJS once per cold start. Vercel reuses the module between
+ * warm invocations, so bootstrapPromise is only awaited on the first request.
+ *
+ * NOTE: @vendia/serverless-express is intentionally NOT used here.
+ * That library is an AWS Lambda adapter and throws
+ * "Unable to determine event source" on Vercel, which passes plain
+ * Node.js IncomingMessage / ServerResponse objects — not Lambda events.
+ * The Express adapter handles Vercel's req/res directly.
+ */
+const bootstrapPromise = (async () => {
   const app = await NestFactory.create(
     AppModule,
     new ExpressAdapter(expressServer),
@@ -34,12 +42,9 @@ async function bootstrap() {
   app.useGlobalFilters(new ApiErrorFilter());
 
   await app.init();
-  handler = serverlessExpress({ app: expressServer });
-}
+})();
 
-const bootstrapPromise = bootstrap();
-
-export default async function (req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   await bootstrapPromise;
-  return handler(req, res);
+  expressServer(req, res);
 }

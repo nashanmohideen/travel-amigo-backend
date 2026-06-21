@@ -12,15 +12,15 @@ import { Roles } from "../common/decorators/roles.decorator";
 export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
-  /** GET /api/v1/admin/feedback — all feedback submissions. */
-  @Get("feedback")
-  listFeedback() {
+  /** GET /api/v1/admin/feedback/all — retrieve all user feedback submissions. */
+  @Get("feedback/all")
+  listAllFeedbackSubmissions() {
     return this.admin.listFeedback();
   }
 
-  /** PUT /api/v1/admin/places/:id — update place content. */
-  @Put("places/:id")
-  updatePlace(@Param("id") id: string, @Body() dto: UpdatePlaceDto) {
+  /** PUT /api/v1/admin/places/:id/update-content — update place content (name, description, etc). */
+  @Put("places/:id/update-content")
+  updatePlaceContent(@Param("id") id: string, @Body() dto: UpdatePlaceDto) {
     return this.admin.updatePlace(id, dto);
   }
 }

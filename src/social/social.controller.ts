@@ -19,32 +19,32 @@ import { CurrentUser, type AuthUser } from "../common/decorators/current-user.de
 export class SocialController {
   constructor(private readonly social: SocialService) {}
 
-  /** POST /api/v1/share — create a share token (guests allowed). */
-  @Post("share")
+  /** POST /api/v1/share/create-link — generate a share token for a trip (guests allowed). */
+  @Post("share/create-link")
   @UseGuards(OptionalJwtGuard)
-  createShare(@Body() dto: CreateShareDto, @CurrentUser() user?: AuthUser) {
+  createShareLink(@Body() dto: CreateShareDto, @CurrentUser() user?: AuthUser) {
     return this.social.createShare(dto, user?.id);
   }
 
-  /** GET /api/v1/share/:token — load a shared itinerary (public). */
-  @Get("share/:token")
-  getShared(@Param("token") token: string) {
+  /** GET /api/v1/share/:token/view — resolve a share token and return the shared itinerary (public). */
+  @Get("share/:token/view")
+  getSharedItinerary(@Param("token") token: string) {
     return this.social.getShared(token);
   }
 
-  /** POST /api/v1/feedback — submit feedback (guests allowed). */
-  @Post("feedback")
+  /** POST /api/v1/feedback/submit — submit user feedback (guests allowed). */
+  @Post("feedback/submit")
   @HttpCode(201)
   @UseGuards(OptionalJwtGuard)
-  submitFeedback(@Body() dto: SubmitFeedbackDto, @CurrentUser() user?: AuthUser) {
+  submitUserFeedback(@Body() dto: SubmitFeedbackDto, @CurrentUser() user?: AuthUser) {
     return this.social.submitFeedback(dto, user?.id);
   }
 
-  /** GET /api/v1/feedback — list feedback (admin only). */
-  @Get("feedback")
+  /** GET /api/v1/feedback/all — list all feedback submissions (admin only). */
+  @Get("feedback/all")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin")
-  listFeedback() {
+  listAllFeedback() {
     return this.social.listFeedback();
   }
 }

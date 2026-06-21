@@ -12,21 +12,21 @@ import { OptionalJwtGuard } from "../auth/guards/optional-jwt.guard";
 export class PlacesController {
   constructor(private readonly places: PlacesService) {}
 
-  /** GET /api/v1/places/destinations — distinct destination strings from DB. */
-  @Get("destinations")
-  listDestinations() {
+  /** GET /api/v1/places/available-destinations — list distinct destination names from the database. */
+  @Get("available-destinations")
+  listAvailableDestinations() {
     return this.places.listDestinations();
   }
 
-  /** GET /api/v1/places?destination=ella&category=nature&interests=nature,photography */
-  @Get()
-  list(@Query() query: ListPlacesQueryDto) {
+  /** GET /api/v1/places/search?destination=ella&category=nature&interests=nature,photography */
+  @Get("search")
+  listPlaces(@Query() query: ListPlacesQueryDto) {
     return this.places.list(query);
   }
 
-  /** GET /api/v1/places/:id — detail with cached Google enrichment. */
-  @Get(":id")
-  get(@Param("id") id: string) {
+  /** GET /api/v1/places/:id/details — get place detail with cached Google enrichment (rating, hours). */
+  @Get(":id/details")
+  getPlaceById(@Param("id") id: string) {
     return this.places.getById(id);
   }
 }

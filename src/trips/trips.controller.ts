@@ -27,58 +27,58 @@ export class TripsController {
   constructor(private readonly trips: TripsService) {}
 
   /**
-   * POST /api/v1/trips/generate — generate an itinerary from TripInput.
+   * POST /api/v1/trips/generate-itinerary — generate an itinerary from TripInput.
    * Guests allowed (OptionalJwtGuard); rate-limited to 10/hour per IP.
    * Response: GeneratedItinerary (frontend contract).
    */
-  @Post("generate")
+  @Post("generate-itinerary")
   @HttpCode(200)
   @UseGuards(OptionalJwtGuard, GenerateRateLimitGuard)
-  generate(@Body() dto: GenerateTripDto) {
+  generateItinerary(@Body() dto: GenerateTripDto) {
     return this.trips.generate(dto);
   }
 
-  /** GET /api/v1/trips — list the user's saved trips. */
-  @Get()
+  /** GET /api/v1/trips/my-trips — list all saved trips for the authenticated user. */
+  @Get("my-trips")
   @UseGuards(JwtAuthGuard)
-  list(@CurrentUser() user: AuthUser) {
+  listUserTrips(@CurrentUser() user: AuthUser) {
     return this.trips.list(user.id);
   }
 
-  /** GET /api/v1/trips/:id */
-  @Get(":id")
+  /** GET /api/v1/trips/:id/details — get a single trip by ID (must belong to user). */
+  @Get(":id/details")
   @UseGuards(JwtAuthGuard)
-  get(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+  getTripById(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.trips.getById(user.id, id);
   }
 
-  /** POST /api/v1/trips — save a generated/edited itinerary as a trip. */
-  @Post()
+  /** POST /api/v1/trips/save-itinerary — save a generated/edited itinerary as a new trip. */
+  @Post("save-itinerary")
   @UseGuards(JwtAuthGuard)
-  create(@CurrentUser() user: AuthUser, @Body() dto: CreateTripDto) {
+  createTrip(@CurrentUser() user: AuthUser, @Body() dto: CreateTripDto) {
     return this.trips.create(user.id, dto);
   }
 
-  /** PUT /api/v1/trips/:id — update trip metadata and/or itinerary snapshot. */
-  @Put(":id")
+  /** PUT /api/v1/trips/:id/update-details — update trip metadata and/or itinerary snapshot. */
+  @Put(":id/update-details")
   @UseGuards(JwtAuthGuard)
-  update(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() dto: UpdateTripDto) {
+  updateTrip(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() dto: UpdateTripDto) {
     return this.trips.update(user.id, id, dto);
   }
 
-  /** DELETE /api/v1/trips/:id */
-  @Delete(":id")
+  /** DELETE /api/v1/trips/:id/delete — permanently delete a trip. */
+  @Delete(":id/delete")
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
-  async remove(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+  async deleteTrip(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     await this.trips.remove(user.id, id);
-    return { ok: true, message: "Trip deleted" };
+    return { ok: true, message: "Trip deleted successfully" };
   }
 
-  /** POST /api/v1/trips/:id/items — add an itinerary item. */
-  @Post(":id/items")
+  /** POST /api/v1/trips/:id/add-item — add a new itinerary item to a trip day. */
+  @Post(":id/add-item")
   @UseGuards(JwtAuthGuard)
-  addItem(
+  addItineraryItem(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string,
     @Body() dto: AddItineraryItemDto
@@ -86,10 +86,10 @@ export class TripsController {
     return this.trips.addItem(user.id, id, dto);
   }
 
-  /** PUT /api/v1/trips/:id/items/:itemId — edit an itinerary item. */
-  @Put(":id/items/:itemId")
+  /** PUT /api/v1/trips/:id/items/:itemId/update — update an existing itinerary item. */
+  @Put(":id/items/:itemId/update")
   @UseGuards(JwtAuthGuard)
-  updateItem(
+  updateItineraryItem(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string,
     @Param("itemId") itemId: string,
@@ -98,11 +98,11 @@ export class TripsController {
     return this.trips.updateItem(user.id, id, itemId, dto);
   }
 
-  /** DELETE /api/v1/trips/:id/items/:itemId — remove an itinerary item. */
-  @Delete(":id/items/:itemId")
+  /** DELETE /api/v1/trips/:id/items/:itemId/remove — remove an item from an itinerary. */
+  @Delete(":id/items/:itemId/remove")
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
-  removeItem(
+  removeItineraryItem(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string,
     @Param("itemId") itemId: string
@@ -110,11 +110,11 @@ export class TripsController {
     return this.trips.removeItem(user.id, id, itemId);
   }
 
-  /** POST /api/v1/trips/:id/export-pdf — queue async PDF generation. */
-  @Post(":id/export-pdf")
+  /** POST /api/v1/trips/:id/request-pdf-export — queue async PDF export for a trip. */
+  @Post(":id/request-pdf-export")
   @HttpCode(202)
   @UseGuards(JwtAuthGuard)
-  exportPdf(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+  requestPdfExport(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.trips.requestPdfExport(user.id, id);
   }
 }

@@ -10,38 +10,38 @@ export class AuthController {
 
   /** POST /api/v1/auth/register — create account + send verification email. */
   @Post("register")
-  register(@Body() dto: RegisterDto) {
+  registerAccount(@Body() dto: RegisterDto) {
     return this.auth.register(dto.email, dto.password);
   }
 
-  /** POST /api/v1/auth/login */
+  /** POST /api/v1/auth/login — validate credentials, return token pair. */
   @Post("login")
   @HttpCode(200)
-  login(@Body() dto: LoginDto) {
+  loginWithCredentials(@Body() dto: LoginDto) {
     return this.auth.login(dto.email, dto.password);
   }
 
-  /** POST /api/v1/auth/refresh — rotates the refresh token. */
+  /** POST /api/v1/auth/refresh — rotate refresh token, return new token pair. */
   @Post("refresh")
   @HttpCode(200)
-  refresh(@Body() dto: RefreshDto) {
+  refreshAccessToken(@Body() dto: RefreshDto) {
     return this.auth.refresh(dto.refreshToken);
   }
 
-  /** POST /api/v1/auth/logout — revokes the stored refresh token. */
+  /** POST /api/v1/auth/logout — revoke the stored refresh token for this user. */
   @Post("logout")
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
-  async logout(@CurrentUser() user: AuthUser) {
+  async revokeSession(@CurrentUser() user: AuthUser) {
     await this.auth.logout(user.id);
-    return { ok: true, message: "Logged out" };
+    return { ok: true, message: "Logged out successfully" };
   }
 
-  /** POST /api/v1/auth/verify-email */
+  /** POST /api/v1/auth/verify-email — mark email as verified from signed token. */
   @Post("verify-email")
   @HttpCode(200)
-  async verifyEmail(@Body() dto: VerifyEmailDto) {
+  async verifyEmailToken(@Body() dto: VerifyEmailDto) {
     await this.auth.verifyEmail(dto.token);
-    return { ok: true, message: "Email verified" };
+    return { ok: true, message: "Email verified successfully" };
   }
 }

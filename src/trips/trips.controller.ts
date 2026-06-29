@@ -18,7 +18,6 @@ import {
   UpdateTripDto,
 } from "./dto/trips.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { OptionalJwtGuard } from "../auth/guards/optional-jwt.guard";
 import { GenerateRateLimitGuard } from "../common/guards/rate-limit.guard";
 import { CurrentUser, type AuthUser } from "../common/decorators/current-user.decorator";
 
@@ -28,12 +27,12 @@ export class TripsController {
 
   /**
    * POST /api/v1/trips/generate-itinerary — generate an itinerary from TripInput.
-   * Guests allowed (OptionalJwtGuard); rate-limited to 10/hour per IP.
+   * Requires a valid JWT (authenticated users only); rate-limited to 10/hour per IP.
    * Response: GeneratedItinerary (frontend contract).
    */
   @Post("generate-itinerary")
   @HttpCode(200)
-  @UseGuards(OptionalJwtGuard, GenerateRateLimitGuard)
+  @UseGuards(JwtAuthGuard, GenerateRateLimitGuard)
   generateItinerary(@Body() dto: GenerateTripDto) {
     return this.trips.generate(dto);
   }

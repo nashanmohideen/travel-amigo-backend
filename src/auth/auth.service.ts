@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -60,6 +61,12 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       throw new UnauthorizedException("Invalid email or password");
     }
+    if (!user.emailVerified) {
+      throw new ForbiddenException({
+        message: "Please verify your email before signing in.",
+        code: "EMAIL_NOT_VERIFIED",
+      });
+    }
     return this.issueTokens(user.id, user.email, user.role, user.emailVerified);
   }
 
@@ -96,6 +103,22 @@ export class AuthService {
       where: { id: userId },
       data: { refreshToken: null },
     });
+  }
+
+  /**
+   * Re-issue a verification email for an unverified account.
+   * Returns silently for unknown or already-verified emails to avoid
+   * user enumeration.
+   */
+  async resendVerification(email: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user || user.emailVerified) return;
+
+    const verifyToken = await this.jwt.signAsync(
+      { sub: user.id, email: user.email, type: "verify-email" },
+      { secret: this.secret(), expiresIn: VERIFY_TOKEN_TTL }
+    );
+    await this.emailQueue.enqueueVerificationEmail(user.email, verifyToken);
   }
 
   /** Mark the user's email as verified from a signed verify-email token. */

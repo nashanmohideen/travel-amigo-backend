@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { LoginDto, RefreshDto, RegisterDto, VerifyEmailDto } from "./dto/auth.dto";
+import { LoginDto, RefreshDto, RegisterDto, ResendVerificationDto, VerifyEmailDto } from "./dto/auth.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { CurrentUser, type AuthUser } from "../common/decorators/current-user.decorator";
 
@@ -43,5 +43,19 @@ export class AuthController {
   async verifyEmailToken(@Body() dto: VerifyEmailDto) {
     await this.auth.verifyEmail(dto.token);
     return { ok: true, message: "Email verified successfully" };
+  }
+
+  /**
+   * POST /api/v1/auth/resend-verification — queue a new verification email.
+   * Always returns 200 to avoid revealing whether the email address exists.
+   */
+  @Post("resend-verification")
+  @HttpCode(200)
+  async resendVerificationEmail(@Body() dto: ResendVerificationDto) {
+    await this.auth.resendVerification(dto.email);
+    return {
+      ok: true,
+      message: "If that address is registered and unverified, a new email has been sent.",
+    };
   }
 }

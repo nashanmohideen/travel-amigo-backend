@@ -29,3 +29,8 @@ export class VerifyEmailDto {
   @IsNotEmpty()
   token!: string;
 }
+
+export class ResendVerificationDto {
+  @IsEmail()
+  email!: string;
+}

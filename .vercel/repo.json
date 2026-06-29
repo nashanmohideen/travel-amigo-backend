@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_qycsE09tYzH5fikXKAmaT4puH9ad",
+      "name": "travel-amigo-backend",
+      "directory": ".",
+      "orgId": "team_dX2LH55zlrKLVJuhPdHz6nnn"
+    }
+  ]
+}
